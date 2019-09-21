@@ -8,7 +8,7 @@ import pickle
 print("Hello World 1")
 file_list = []
 class_list = []
-data_path = "chest_xray/chest_xray/train"
+data_path = "/Users/sahitjain/PycharmProjects/sunhacks2019/chest_xray/train"
 # All the categories you want your neural network to detect
 cat = ["NORMAL", "PNEUMONIA"]
 imgsize = 780
