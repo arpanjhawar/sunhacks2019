@@ -1,52 +1,65 @@
-import numpy as np
-import os
-from matplotlib import pyplot as plt
+from tkinter import *
+from tkinter import ttk
+from tkinter import filedialog
 import cv2
-import random
-import pickle
-
-file_list = []
-class_list = []
-data_path = "chest_xray/chest_xray/train"
-# All the categories you want your neural network to detect
-cat = ["NORMAL", "PNEUMONIA"]
-imgsize = 200
-for a in cat:
-    path = os.path.join(data_path, a)
-    for img in os.listdir(path):
-        iarr = cv2.imread(os.path.join(path, img), cv2.IMREAD_GRAYSCALE)
-training_data = []
-print("Hello World 2")
+from PIL import ImageTk, Image
+import os
+import tensorflow as tf
+from keras import Sequential
 
 
-def create_training_data():
-    for category in cat:
-        pa = os.path.join(data_path, category)
-        class_num = cat.index(category)
-        for imag in os.listdir(pa):
-            img_array = cv2.imread(os.path.join(pa, imag), cv2.IMREAD_GRAYSCALE)
-            new_array = cv2.resize(img_array, (imgsize, imgsize))
-            training_data.append([new_array, class_num])
+def chooseip():
+    root = Tk()
+    root.withdraw()
+    global filename
+    filename = filedialog.askopenfilename(
+        parent=root,
+        filetypes=[("Image Files", "*.jpeg")],
+        title='Choose an Input Image'
+    )
+    if filename != None:
+        global mainFile
+        mainFile = filename
 
 
-print("Hello World 3")
-create_training_data()
-print("Hello World")
-random.shuffle(training_data)
-x = []
-y = []
-for f, l in training_data:
-    x.append(f)
-    y.append(l)
-x = np.array(x).reshape(-1, imgsize, imgsize, 1)
-pickle_out = open("X.pickle", "wb")
-pickle.dump(x, pickle_out)
-pickle_out.close()
-print("Hello World 4")
-pickle_out = open("y.pickle", "wb")
-pickle.dump(y, pickle_out)
-pickle_out.close()
-print("Hello World 5")
-pickle_in = open("X.pickle", "rb")
-x = pickle.load(pickle_in)
-print("Hello World 6")
+def predict():
+    cat = ["NORMAL", "PNEUMONIA"]
+
+    def prepare(file):
+        imsz = 200
+        img_array = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+        new_array = cv2.resize(img_array, (imsz, imsz))
+        return new_array.reshape(-1, imsz, imsz, 1)
+
+    model = tf.keras.models.load_model("CNN3.model")
+    data_path = filename
+    image = prepare(data_path)
+    prediction = model.predict([image])
+    prediction = list(prediction[0])
+    print(cat[prediction.index(max(prediction))])
+    Result.set(cat[prediction.index(max(prediction))])
+
+
+root = Tk()
+root.title("Image Classificaiton")
+
+mainframe = ttk.Frame(root, padding="3 3 12 12")
+mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
+
+Result = StringVar()
+
+ttk.Button(mainframe, text="Choose Input Image File", command=chooseip).grid(column=1, row=1, sticky=W)
+
+ttk.Label(mainframe, textvariable=Result).grid(column=3, row=3, sticky=(W, E))
+
+ttk.Button(mainframe, text="Classify", command=predict).grid(column=3, row=1, sticky=W)
+
+ttk.Label(mainframe, text="Result:").grid(column=1, row=3, sticky=W)
+
+for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
+
+root.bind('<Return>', predict)
+
+root.mainloop()
